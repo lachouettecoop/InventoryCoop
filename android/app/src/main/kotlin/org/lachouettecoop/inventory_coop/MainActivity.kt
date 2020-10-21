@@ -1,4 +1,4 @@
-package org.lachouettecoop.inventorycoop
+package fr.lachouettecoop.inventorycoop
 
 import io.flutter.embedding.android.FlutterActivity
 
