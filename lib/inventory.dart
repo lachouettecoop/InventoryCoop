@@ -21,7 +21,6 @@ class InventoryState extends State<InventoryWidget> {
   final _barcodeController = TextEditingController();
   final _productNameController = TextEditingController();
   final _qtyController = TextEditingController();
-  bool _activeButton = false;
 
   final _qtyFocus = FocusNode();
 
@@ -49,7 +48,6 @@ class InventoryState extends State<InventoryWidget> {
     });
 
     _barcodeController.addListener(() {
-      _validateButton();
       var product = _productsByBarcode[_barcodeController.text];
       if (product != null) {
         if (product.name != _productNameController.text) {
@@ -68,7 +66,6 @@ class InventoryState extends State<InventoryWidget> {
       }
     });
     _productNameController.addListener(() {
-      _validateButton();
       var product = _productsByName[_productNameController.text];
       if (product != null) {
         if (product.barcode != _barcodeController.text) {
@@ -86,15 +83,16 @@ class InventoryState extends State<InventoryWidget> {
         _qtyController.clear();
       }
     });
-    _qtyController.addListener(() {
-      _validateButton();
-    });
   }
 
-  void _validateButton() {
-    _activeButton = (_barcodeController.text.isNotEmpty &&
-        _productNameController.text.isNotEmpty &&
-        _qtyController.text.isNotEmpty);
+  bool _isQtyValid() {
+    try {
+      var qty = double.parse(_qtyController.text);
+      _qtyController.text = qty.toStringAsFixed(3);
+      return true;
+    } on FormatException {
+    }
+    return false;
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -132,16 +130,16 @@ class InventoryState extends State<InventoryWidget> {
                   Flexible(
                     child: TypeAheadFormField(
                       textFieldConfiguration: TextFieldConfiguration(
-                          controller: _barcodeController,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Code-barre',
-                            prefixIcon: IconButton(
-                              onPressed: () => _barcodeController.clear(),
-                              icon: Icon(Icons.cancel),
-                            ),
+                        controller: _barcodeController,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Code-barre',
+                          prefixIcon: IconButton(
+                            onPressed: () => _barcodeController.clear(),
+                            icon: Icon(Icons.cancel),
                           ),
-                          keyboardType: TextInputType.number,
+                        ),
+                        keyboardType: TextInputType.number,
                       ),
                       suggestionsCallback: (pattern) {
                         List<String> suggestions = [];
@@ -168,9 +166,8 @@ class InventoryState extends State<InventoryWidget> {
                               'Aucun code-barre trouvé',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  color: Theme
-                                      .of(context)
-                                      .disabledColor, fontSize: 18.0),
+                                  color: Theme.of(context).disabledColor,
+                                  fontSize: 18.0),
                             ),
                           );
                         } else {
@@ -200,8 +197,7 @@ class InventoryState extends State<InventoryWidget> {
                       onPressed: () => _productNameController.clear(),
                       icon: Icon(Icons.cancel),
                     ),
-                  )
-              ),
+                  )),
               suggestionsCallback: (pattern) {
                 List<String> suggestions = [];
                 if (pattern.length > 1) {
@@ -210,13 +206,13 @@ class InventoryState extends State<InventoryWidget> {
                     var fuzzyPattern = removeDiacritics(pattern).toLowerCase();
                     var therms = fuzzyPattern.split(' ');
                     var match = true;
-                    for(final therm in therms) {
+                    for (final therm in therms) {
                       if (!fuzzyName.contains(therm)) {
                         match = false;
                         break;
                       }
                     }
-                    if (match){
+                    if (match) {
                       suggestions.add(name);
                     }
                   });
@@ -237,9 +233,8 @@ class InventoryState extends State<InventoryWidget> {
                       'Aucun produit trouvé',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                          color: Theme
-                              .of(context)
-                              .disabledColor, fontSize: 18.0),
+                          color: Theme.of(context).disabledColor,
+                          fontSize: 18.0),
                     ),
                   );
                 } else {
@@ -252,7 +247,6 @@ class InventoryState extends State<InventoryWidget> {
             ),
             TextFormField(
               controller: _qtyController,
-              focusNode: _qtyFocus,
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: 'Quantité',
@@ -261,36 +255,38 @@ class InventoryState extends State<InventoryWidget> {
                   icon: Icon(Icons.cancel),
                 ),
               ),
+              focusNode: _qtyFocus,
               keyboardType: TextInputType.number,
             ),
             RaisedButton(
               child: Text('Valider'),
-              onPressed: _activeButton
+              onPressed: (_barcodeController.text.isEmpty ||
+                      _productNameController.text.isEmpty)
                   ? null
-                  : () =>
-                  setState(() {
-                    var product = _productsByBarcode[_barcodeController.text];
-                    if (product != null) {
-                      ApiClient().postCount(
-                          Storage().counter,
-                          Storage().zone,
-                          _qtyController.text,
-                          product.id,
-                          Storage().inventory.id);
-                      _countsDisplayed.insert(
-                          0,
-                          Count(
-                            counter: Storage().counter,
-                            zone: Storage().zone,
-                            product: product.id,
-                            qty: _qtyController.text,
-                          ));
-                      _barcodeController.clear();
-                      _productNameController.clear();
-                      _qtyController.clear();
-                      FocusScope.of(context).unfocus();
-                    }
-                  }),
+                  : () => setState(() {
+                        var product =
+                            _productsByBarcode[_barcodeController.text];
+                        if (product != null && _isQtyValid()) {
+                          ApiClient().postCount(
+                              Storage().counter,
+                              Storage().zone,
+                              _qtyController.text,
+                              product.id,
+                              Storage().inventory.id);
+                          _countsDisplayed.insert(
+                              0,
+                              Count(
+                                counter: Storage().counter,
+                                zone: Storage().zone,
+                                product: product.id,
+                                qty: _qtyController.text,
+                              ));
+                          _barcodeController.clear();
+                          _productNameController.clear();
+                          _qtyController.clear();
+                          FocusScope.of(context).unfocus();
+                        }
+                      }),
             ),
           ],
         ),
