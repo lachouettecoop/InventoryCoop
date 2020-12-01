@@ -14,13 +14,46 @@ class _CounterState extends State<CounterWidget> {
   String _name = Storage().user.lastname;
   String _team = '';
   Future<List<Product>> _products;
+  bool _showValidate = false;
 
   @override
   void initState() {
     super.initState();
+    _checkValidate();
     _products = ApiClient().fetchProducts({
       'inventory': Storage().inventory.id,
     });
+  }
+
+  Future<void> _showAlert(String title, String message) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(message),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Fermer'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _checkValidate() {
+    _showValidate = _name.isNotEmpty && _team.isNotEmpty;
   }
 
   @override
@@ -45,6 +78,7 @@ class _CounterState extends State<CounterWidget> {
                 onChanged: (text) {
                   setState(() {
                     _name = text;
+                    _checkValidate();
                   });
                 },
               ),
@@ -56,31 +90,40 @@ class _CounterState extends State<CounterWidget> {
                 onChanged: (text) {
                   setState(() {
                     _team = text;
+                    _checkValidate();
                   });
                 },
               ),
               Align(
                 child: RaisedButton(
                   child: Text('Valider'),
-                  onPressed: (_name.isEmpty || _team.isEmpty)
+                  onPressed: !_showValidate
                     ? null
                     : () {
-                      Storage().counter = _name;
-                      Storage().zone = _team;
-                      ApiClient().fetchCounts({
-                        'inventory': Storage().inventory.id,
-                        'counter': Storage().counter,
-                        'zone': Storage().zone,
-                      }).then((counts) {
-                        Storage().counts.clear();
-                        Storage().counts.addAll(counts);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => InventoryWidget()),
-                        );
+                    _showValidate = false;
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        Storage().counter = _name;
+                        Storage().zone = _team;
+                        ApiClient().fetchCounts({
+                          'inventory': Storage().inventory.id,
+                          'counter': Storage().counter,
+                          'zone': Storage().zone,
+                        }).then((counts) {
+                          Storage().counts.clear();
+                          Storage().counts.addAll(counts);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => InventoryWidget()),
+                          );
+                          _checkValidate();
+                        }).catchError((e) {
+                          _showAlert('Impossible de récuperer les comptes',
+                              "Recommencer l'opértion.\n\n${e.toString()}");
+                          _checkValidate();
+                        });
                       });
-                      },
+                  },
               )),
             ];
           } else if (snapshot.hasError) {
