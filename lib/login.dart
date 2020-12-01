@@ -16,6 +16,7 @@ class _LoginState extends State<LoginWidget> {
   String _email = '';
   String _password = '';
   bool _showPassword = false;
+  bool _showValidate = false;
 
   Future<void> _showAlert(String title, String message) async {
     return showDialog<void>(
@@ -44,21 +45,36 @@ class _LoginState extends State<LoginWidget> {
     );
   }
 
+  void _checkValidate() {
+    _showValidate = _url.isNotEmpty && _email.isNotEmpty && _password.isNotEmpty;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkValidate();
+  }
+
   void submit() {
-    ApiClient().clear();
-    ApiClient().setHostUri(_url);
-    var user = ApiClient().login(_email, _password);
-    user.then((value) {
-      Storage().user = value;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) {
-          return InventoriesWidget();
-        }),
-      );
-    }).catchError((e) {
-      _showAlert('Impossible de se connecter',
-          "Verifier l'URL et vos identifiants.\n\n${e.toString()}");
+    _showValidate = false;
+    Future.delayed(const Duration(milliseconds: 100), () {
+      ApiClient().clear();
+      ApiClient().setHostUri(_url);
+      var user = ApiClient().login(_email, _password);
+      user.then((value) {
+        Storage().user = value;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) {
+            return InventoriesWidget();
+          }),
+        );
+        _checkValidate();
+      }).catchError((e) {
+        _showAlert('Impossible de se connecter',
+            "Verifier l'URL et vos identifiants.\n\n${e.toString()}");
+        _checkValidate();
+      });
     });
   }
 
@@ -76,10 +92,11 @@ class _LoginState extends State<LoginWidget> {
         onChanged: (text) {
           setState(() {
             _url = text;
+            _checkValidate();
           });
         },
         onEditingComplete: () =>
-            FocusScope.of(context).nextFocus(),
+          FocusScope.of(context).nextFocus(),
         textInputAction: TextInputAction.next,
       ),
       TextFormField(
@@ -89,6 +106,7 @@ class _LoginState extends State<LoginWidget> {
         onChanged: (text) {
           setState(() {
             _email = text;
+            _checkValidate();
           });
         },
         onEditingComplete: () =>
@@ -115,6 +133,7 @@ class _LoginState extends State<LoginWidget> {
         onChanged: (text) {
           setState(() {
             _password = text;
+            _checkValidate();
           });
         },
         onEditingComplete: () {
@@ -128,7 +147,7 @@ class _LoginState extends State<LoginWidget> {
       Align(
         child: RaisedButton(
           child: Text('Valider'),
-          onPressed: (_url.isEmpty || _email.isEmpty || _password.isEmpty)
+          onPressed: !_showValidate
               ? null
               : () {
             submit();

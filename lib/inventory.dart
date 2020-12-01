@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:intl/intl.dart';
 
 import 'package:InventoryCoop/api/client.dart';
 import 'package:InventoryCoop/model/count.dart';
@@ -88,7 +89,7 @@ class InventoryState extends State<InventoryWidget> {
   bool _isQtyValid() {
     try {
       var qty = double.parse(_qtyController.text);
-      _qtyController.text = qty.toStringAsFixed(3);
+      _qtyController.text = NumberFormat('####.##').format(qty);
       return true;
     } on FormatException {
     }

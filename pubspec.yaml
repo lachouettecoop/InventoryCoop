@@ -28,6 +28,7 @@ dependencies:
   flutter_barcode_scanner: ^1.0.1
   flutter_typeahead: ^1.8.8
   http: ^0.12.2
+  intl: ^0.16.1
   retry: ^3.0.1
 
 dev_dependencies:

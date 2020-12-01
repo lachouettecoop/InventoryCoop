@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class Count {
   final String counter;
   final String zone;
@@ -11,7 +13,7 @@ class Count {
       counter: json['counter'],
       zone: json['zone'],
       product: json['product'],
-      qty: json['qty'].toString(),
+      qty: NumberFormat('####.##').format(json['qty']),
     );
   }
 }
