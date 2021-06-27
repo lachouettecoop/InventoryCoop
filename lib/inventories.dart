@@ -31,7 +31,7 @@ class InventoriesState extends State<InventoriesWidget> {
         // a previously-obtained Future<String> or null
         builder:
             (BuildContext context, AsyncSnapshot<List<Inventory>> snapshot) {
-          List<Widget> children = List<Widget>();
+          List<Widget> children = <Widget>[];
           if (snapshot.hasData) {
             snapshot.data.forEach((inventory) {
               if (inventory.isActive()) {
@@ -51,7 +51,7 @@ class InventoriesState extends State<InventoriesWidget> {
               }
             });
             children.add(Align(
-                child: RaisedButton(
+                child: ElevatedButton(
                   child: Text('Valider'),
                   onPressed: () {
                     Storage().inventory = _selectedInventory;

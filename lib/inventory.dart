@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:InventoryCoop/api/client.dart';
+import 'package:InventoryCoop/model/count.dart';
+import 'package:InventoryCoop/model/product.dart';
+import 'package:InventoryCoop/model/storage.dart';
 import 'package:diacritic/diacritic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,10 +12,7 @@ import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:intl/intl.dart';
 
-import 'package:InventoryCoop/api/client.dart';
-import 'package:InventoryCoop/model/count.dart';
-import 'package:InventoryCoop/model/product.dart';
-import 'package:InventoryCoop/model/storage.dart';
+const NO_BARCODE = '-';
 
 class InventoryWidget extends StatefulWidget {
   @override
@@ -38,7 +39,9 @@ class InventoryState extends State<InventoryWidget> {
     _productsByName.clear();
     _productsById.clear();
     Storage().products.forEach((product) {
-      _productsByBarcode[product.barcode] = product;
+      if (product.barcode.isNotEmpty) {
+        _productsByBarcode[product.barcode] = product;
+      }
       _productsByName[product.name] = product;
       _productsById[product.id] = product;
     });
@@ -49,6 +52,9 @@ class InventoryState extends State<InventoryWidget> {
     });
 
     _barcodeController.addListener(() {
+      if (_barcodeController.text == NO_BARCODE) {
+        return;
+      }
       var product = _productsByBarcode[_barcodeController.text];
       if (product != null) {
         if (product.name != _productNameController.text) {
@@ -69,8 +75,12 @@ class InventoryState extends State<InventoryWidget> {
     _productNameController.addListener(() {
       var product = _productsByName[_productNameController.text];
       if (product != null) {
-        if (product.barcode != _barcodeController.text) {
-          _barcodeController.text = product.barcode;
+        var barcode = NO_BARCODE;
+        if (product.barcode.isNotEmpty) {
+          barcode = product.barcode;
+        }
+        if (barcode != _barcodeController.text) {
+          _barcodeController.text = barcode;
           FocusScope.of(context).requestFocus(_qtyFocus);
           Future.delayed(const Duration(milliseconds: 500), () {
             setState(() {
@@ -91,8 +101,7 @@ class InventoryState extends State<InventoryWidget> {
       var qty = double.parse(_qtyController.text);
       _qtyController.text = NumberFormat('####.##').format(qty);
       return true;
-    } on FormatException {
-    }
+    } on FormatException {}
     return false;
   }
 
@@ -116,6 +125,26 @@ class InventoryState extends State<InventoryWidget> {
     setState(() {
       _barcodeController.text = barcodeScanRes;
     });
+  }
+
+  void recordCount() {
+    var product = _productsByName[_productNameController.text];
+    if (product != null && _isQtyValid()) {
+      ApiClient().postCount(Storage().counter, Storage().zone,
+          _qtyController.text, product.id, Storage().inventory.id);
+      _countsDisplayed.insert(
+          0,
+          Count(
+            counter: Storage().counter,
+            zone: Storage().zone,
+            product: product.id,
+            qty: _qtyController.text,
+          ));
+      _barcodeController.clear();
+      _productNameController.clear();
+      _qtyController.clear();
+      FocusScope.of(context).unfocus();
+    }
   }
 
   List<Widget> columnChildren() {
@@ -246,48 +275,39 @@ class InventoryState extends State<InventoryWidget> {
                 _productNameController.text = suggestion;
               },
             ),
-            TextFormField(
-              controller: _qtyController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Quantité',
-                prefixIcon: IconButton(
-                  onPressed: () => _qtyController.clear(),
-                  icon: Icon(Icons.cancel),
-                ),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Flexible(
+                    child: TextField(
+                      controller: _qtyController,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Quantité',
+                        prefixIcon: IconButton(
+                          onPressed: () => _qtyController.clear(),
+                          icon: Icon(Icons.cancel),
+                        ),
+                      ),
+                      onSubmitted: (String value) {
+                        this.recordCount();
+                      },
+                      focusNode: _qtyFocus,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  ElevatedButton(
+                    child: Text('Enregistrer'),
+                    onPressed: _productNameController.text.isEmpty
+                        ? null
+                        : () => setState(() {
+                              this.recordCount();
+                            }),
+                  ),
+                ],
               ),
-              focusNode: _qtyFocus,
-              keyboardType: TextInputType.number,
-            ),
-            RaisedButton(
-              child: Text('Valider'),
-              onPressed: (_barcodeController.text.isEmpty ||
-                      _productNameController.text.isEmpty)
-                  ? null
-                  : () => setState(() {
-                        var product =
-                            _productsByBarcode[_barcodeController.text];
-                        if (product != null && _isQtyValid()) {
-                          ApiClient().postCount(
-                              Storage().counter,
-                              Storage().zone,
-                              _qtyController.text,
-                              product.id,
-                              Storage().inventory.id);
-                          _countsDisplayed.insert(
-                              0,
-                              Count(
-                                counter: Storage().counter,
-                                zone: Storage().zone,
-                                product: product.id,
-                                qty: _qtyController.text,
-                              ));
-                          _barcodeController.clear();
-                          _productNameController.clear();
-                          _qtyController.clear();
-                          FocusScope.of(context).unfocus();
-                        }
-                      }),
             ),
           ],
         ),

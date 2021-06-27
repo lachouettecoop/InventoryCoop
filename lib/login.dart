@@ -145,7 +145,7 @@ class _LoginState extends State<LoginWidget> {
         textInputAction: TextInputAction.done,
       ),
       Align(
-        child: RaisedButton(
+        child: ElevatedButton(
           child: Text('Valider'),
           onPressed: !_showValidate
               ? null
