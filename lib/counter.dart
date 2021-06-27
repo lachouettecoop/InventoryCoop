@@ -66,7 +66,7 @@ class _CounterState extends State<CounterWidget> {
         future: _products,
         builder: (BuildContext context, AsyncSnapshot<List<Product>> snapshot) {
           Storage().products.clear();
-          List<Widget> children = List<Widget>();
+          List<Widget> children = <Widget>[];
           if (snapshot.hasData) {
             Storage().products.addAll(snapshot.data);
             children = <Widget>[
@@ -95,7 +95,7 @@ class _CounterState extends State<CounterWidget> {
                 },
               ),
               Align(
-                child: RaisedButton(
+                child: ElevatedButton(
                   child: Text('Valider'),
                   onPressed: !_showValidate
                     ? null
