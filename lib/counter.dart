@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:InventoryCoop/api/client.dart';
-import 'package:InventoryCoop/inventory.dart';
-import 'package:InventoryCoop/model/product.dart';
-import 'package:InventoryCoop/model/storage.dart';
+import 'package:inventory_coop/api/client.dart';
+import 'package:inventory_coop/inventory.dart';
+import 'package:inventory_coop/model/product.dart';
+import 'package:inventory_coop/model/storage.dart';
 
 class CounterWidget extends StatefulWidget {
   @override

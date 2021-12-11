@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:InventoryCoop/api/client.dart';
-import 'package:InventoryCoop/model/count.dart';
-import 'package:InventoryCoop/model/product.dart';
-import 'package:InventoryCoop/model/storage.dart';
+import 'package:inventory_coop/api/client.dart';
+import 'package:inventory_coop/model/count.dart';
+import 'package:inventory_coop/model/product.dart';
+import 'package:inventory_coop/model/storage.dart';
 import 'package:diacritic/diacritic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

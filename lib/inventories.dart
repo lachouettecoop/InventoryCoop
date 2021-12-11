@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:InventoryCoop/counter.dart';
-import 'package:InventoryCoop/api/client.dart';
-import 'package:InventoryCoop/model/inventory.dart';
-import 'package:InventoryCoop/model/storage.dart';
+import 'package:inventory_coop/counter.dart';
+import 'package:inventory_coop/api/client.dart';
+import 'package:inventory_coop/model/inventory.dart';
+import 'package:inventory_coop/model/storage.dart';
 
 class InventoriesWidget extends StatefulWidget {
   @override
