@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:InventoryCoop/inventories.dart';
-import 'package:InventoryCoop/api/client.dart';
-import 'package:InventoryCoop/model/storage.dart';
+import 'package:inventory_coop/inventories.dart';
+import 'package:inventory_coop/api/client.dart';
+import 'package:inventory_coop/model/storage.dart';
 
 const String URL_SERVER = 'https://inventaires.lachouettecoop.fr';
 

@@ -5,10 +5,10 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:retry/retry.dart';
 
-import 'package:InventoryCoop/model/count.dart';
-import 'package:InventoryCoop/model/inventory.dart';
-import 'package:InventoryCoop/model/product.dart';
-import 'package:InventoryCoop/model/user.dart';
+import 'package:inventory_coop/model/count.dart';
+import 'package:inventory_coop/model/inventory.dart';
+import 'package:inventory_coop/model/product.dart';
+import 'package:inventory_coop/model/user.dart';
 
 class ApiClient {
   Future<List<Count>> fetchCounts(where) async {
