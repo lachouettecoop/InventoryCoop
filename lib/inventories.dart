@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'package:inventory_coop/counter.dart';
 import 'package:inventory_coop/api/client.dart';
+import 'package:inventory_coop/counter.dart';
 import 'package:inventory_coop/model/inventory.dart';
 import 'package:inventory_coop/model/storage.dart';
 
@@ -11,8 +10,8 @@ class InventoriesWidget extends StatefulWidget {
 }
 
 class InventoriesState extends State<InventoriesWidget> {
-  Future<List<Inventory>> _inventories;
-  Inventory _selectedInventory;
+  late Future<List<Inventory>> _inventories;
+  Inventory? _selectedInventory;
 
   @override
   void initState() {
@@ -33,7 +32,7 @@ class InventoriesState extends State<InventoriesWidget> {
             (BuildContext context, AsyncSnapshot<List<Inventory>> snapshot) {
           List<Widget> children = <Widget>[];
           if (snapshot.hasData) {
-            snapshot.data.forEach((inventory) {
+            snapshot.data?.forEach((inventory) {
               if (inventory.isActive()) {
                 if (_selectedInventory == null) {
                   _selectedInventory = inventory;
@@ -42,9 +41,9 @@ class InventoriesState extends State<InventoriesWidget> {
                   title: Text(inventory.date),
                   value: inventory,
                   groupValue: _selectedInventory,
-                  onChanged: (Inventory value) {
+                  onChanged: (value) {
                     setState(() {
-                      _selectedInventory = value;
+                      _selectedInventory = value as Inventory;
                     });
                   },
                 ));
@@ -52,16 +51,15 @@ class InventoriesState extends State<InventoriesWidget> {
             });
             children.add(Align(
                 child: ElevatedButton(
-                  child: Text('Valider'),
-                  onPressed: () {
-                    Storage().inventory = _selectedInventory;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CounterWidget()),
-                    );
-                  },
-                )
-            ));
+              child: Text('Valider'),
+              onPressed: () {
+                Storage().inventory = _selectedInventory as Inventory;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CounterWidget()),
+                );
+              },
+            )));
           } else if (snapshot.hasError) {
             children = <Widget>[
               Icon(

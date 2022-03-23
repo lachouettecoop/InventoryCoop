@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:inventory_coop/api/client.dart';
 import 'package:inventory_coop/inventory.dart';
 import 'package:inventory_coop/model/product.dart';
@@ -13,7 +12,7 @@ class CounterWidget extends StatefulWidget {
 class _CounterState extends State<CounterWidget> {
   String _name = Storage().user.lastname;
   String _team = '';
-  Future<List<Product>> _products;
+  late Future<List<Product>> _products;
   bool _showValidate = false;
 
   @override
@@ -68,7 +67,7 @@ class _CounterState extends State<CounterWidget> {
           Storage().products.clear();
           List<Widget> children = <Widget>[];
           if (snapshot.hasData) {
-            Storage().products.addAll(snapshot.data);
+            Storage().products.addAll(snapshot.data as List<Product>);
             children = <Widget>[
               TextFormField(
                 initialValue: Storage().user.lastname,
@@ -95,35 +94,35 @@ class _CounterState extends State<CounterWidget> {
                 },
               ),
               Align(
-                child: ElevatedButton(
-                  child: Text('Valider'),
-                  onPressed: !_showValidate
+                  child: ElevatedButton(
+                child: Text('Valider'),
+                onPressed: !_showValidate
                     ? null
                     : () {
-                    _showValidate = false;
-                      Future.delayed(const Duration(milliseconds: 100), () {
-                        Storage().counter = _name;
-                        Storage().zone = _team;
-                        ApiClient().fetchCounts({
-                          'inventory': Storage().inventory.id,
-                          'counter': Storage().counter,
-                          'zone': Storage().zone,
-                        }).then((counts) {
-                          Storage().counts.clear();
-                          Storage().counts.addAll(counts);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => InventoryWidget()),
-                          );
-                          _checkValidate();
-                        }).catchError((e) {
-                          _showAlert('Impossible de récuperer les comptes',
-                              "Recommencer l'opértion.\n\n${e.toString()}");
-                          _checkValidate();
+                        _showValidate = false;
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          Storage().counter = _name;
+                          Storage().zone = _team;
+                          ApiClient().fetchCounts({
+                            'inventory': Storage().inventory.id,
+                            'counter': Storage().counter,
+                            'zone': Storage().zone,
+                          }).then((counts) {
+                            Storage().counts.clear();
+                            Storage().counts.addAll(counts);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => InventoryWidget()),
+                            );
+                            _checkValidate();
+                          }).catchError((e) {
+                            _showAlert('Impossible de récuperer les comptes',
+                                "Recommencer l'opértion.\n\n${e.toString()}");
+                            _checkValidate();
+                          });
                         });
-                      });
-                  },
+                      },
               )),
             ];
           } else if (snapshot.hasError) {

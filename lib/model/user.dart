@@ -4,7 +4,11 @@ class User {
   final String lastname;
   final String role;
 
-  User({this.user, this.name, this.lastname, this.role});
+  User(
+      {required this.user,
+      required this.name,
+      required this.lastname,
+      required this.role});
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
