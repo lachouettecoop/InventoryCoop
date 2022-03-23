@@ -3,19 +3,18 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:retry/retry.dart';
-
 import 'package:inventory_coop/model/count.dart';
 import 'package:inventory_coop/model/inventory.dart';
 import 'package:inventory_coop/model/product.dart';
 import 'package:inventory_coop/model/user.dart';
+import 'package:retry/retry.dart';
 
 class ApiClient {
   Future<List<Count>> fetchCounts(where) async {
     final response = await get('counts', {'where': json.encode(where)});
 
     if (response.statusCode == 200) {
-      List<Count> counts = List<Count>();
+      List<Count> counts = <Count>[];
       var body = jsonDecode(response.body);
       body['items'].forEach((count) {
         counts.add(Count.fromJson(count));
@@ -30,7 +29,7 @@ class ApiClient {
     final response = await get('products', {'where': json.encode(where)});
 
     if (response.statusCode == 200) {
-      List<Product> products = List<Product>();
+      List<Product> products = <Product>[];
       var body = jsonDecode(response.body);
       body['items'].forEach((product) {
         products.add(Product.fromJson(product));
@@ -42,10 +41,10 @@ class ApiClient {
   }
 
   Future<List<Inventory>> fetchInventories() async {
-    final response = await get('inventories', null);
+    final response = await get('inventories', {});
 
     if (response.statusCode == 200) {
-      List<Inventory> inventories = List<Inventory>();
+      List<Inventory> inventories = <Inventory>[];
       var body = jsonDecode(response.body);
       body['items'].forEach((inventory) {
         inventories.add(Inventory.fromJson(inventory));
@@ -56,7 +55,8 @@ class ApiClient {
     }
   }
 
-  Future<Count> postCount(String counter, String zone, String qty, String productId, String inventoryId) async {
+  Future<Count> postCount(String counter, String zone, String qty,
+      String productId, String inventoryId) async {
     var body = json.encode({
       'counter': counter,
       'zone': zone,
@@ -64,7 +64,7 @@ class ApiClient {
       'product': productId,
       'inventory': inventoryId,
     });
-    final response = await post('counts', null, body);
+    final response = await post('counts', {}, body);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return Count.fromJson(jsonDecode(response.body));
@@ -75,7 +75,9 @@ class ApiClient {
 
   String _decodeBase64(String str) {
     //'-', '+' 62nd char of encoding,  '_', '/' 63rd char of encoding
-    String output = str.replaceAll('-', '+').replaceAll('_', '/');  switch (output.length % 4) { // Pad with trailing '='
+    String output = str.replaceAll('-', '+').replaceAll('_', '/');
+    switch (output.length % 4) {
+      // Pad with trailing '='
       case 0: // No pad chars in this case
         break;
       case 2: // Two pad chars
@@ -95,7 +97,7 @@ class ApiClient {
       'email': email,
       'password': password,
     });
-    final response = await post('login', null, body);
+    final response = await post('login', {}, body);
 
     if (response.statusCode == 200) {
       var body = jsonDecode(response.body);
@@ -125,7 +127,9 @@ class ApiClient {
   Future<http.Response> get(String path, Map<String, String> params) async {
     var uri = _hostUri.replace(path: 'api/v1/$path', queryParameters: params);
     return await _r.retry(
-      () => _client.get(uri, headers: _getHeaders()).timeout(Duration(seconds: 5)),
+      () => _client
+          .get(uri, headers: _getHeaders())
+          .timeout(Duration(seconds: 10)),
       retryIf: (e) => e is SocketException || e is TimeoutException,
     );
   }
@@ -136,7 +140,7 @@ class ApiClient {
     return await _r.retry(
       () => _client
           .post(uri, headers: _getHeaders(), body: body)
-          .timeout(Duration(seconds: 5)),
+          .timeout(Duration(seconds: 30)),
       retryIf: (e) => e is SocketException || e is TimeoutException,
     );
   }
@@ -146,7 +150,7 @@ class ApiClient {
   static final ApiClient _instance = ApiClient._privateConstructor();
   static final _client = http.Client();
   static final _r = RetryOptions(maxAttempts: 4);
-  Uri _hostUri;
+  Uri _hostUri = Uri.parse('https://inventaires.lachouettecoop.fr');
   String _token = '';
 
   setHostUri(uri) {

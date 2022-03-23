@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:inventory_coop/api/client.dart';
-import 'package:inventory_coop/model/count.dart';
-import 'package:inventory_coop/model/product.dart';
-import 'package:inventory_coop/model/storage.dart';
 import 'package:diacritic/diacritic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:intl/intl.dart';
+import 'package:inventory_coop/api/client.dart';
+import 'package:inventory_coop/model/count.dart';
+import 'package:inventory_coop/model/product.dart';
+import 'package:inventory_coop/model/storage.dart';
 
 const NO_BARCODE = '-';
 
@@ -25,6 +25,7 @@ class InventoryState extends State<InventoryWidget> {
   final _qtyController = TextEditingController();
 
   final _qtyFocus = FocusNode();
+  bool _recordInProgress = false;
 
   List<Count> _countsDisplayed = [];
 
@@ -111,8 +112,7 @@ class InventoryState extends State<InventoryWidget> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-          "#ff6666", "Cancel", true, ScanMode.BARCODE);
-      print(barcodeScanRes);
+          '#ff6666', 'Cancel', true, ScanMode.BARCODE);
     } on PlatformException {
       barcodeScanRes = 'Failed to get platform version.';
     }
@@ -123,11 +123,12 @@ class InventoryState extends State<InventoryWidget> {
     if (!mounted) return;
 
     setState(() {
-      _barcodeController.text = barcodeScanRes;
+      _barcodeController.text = barcodeScanRes != '-1' ? barcodeScanRes : '';
     });
   }
 
   void recordCount() {
+    _recordInProgress = true;
     var product = _productsByName[_productNameController.text];
     if (product != null && _isQtyValid()) {
       ApiClient().postCount(Storage().counter, Storage().zone,
@@ -143,6 +144,7 @@ class InventoryState extends State<InventoryWidget> {
       _barcodeController.clear();
       _productNameController.clear();
       _qtyController.clear();
+      _recordInProgress = false;
       FocusScope.of(context).unfocus();
     }
   }
@@ -152,70 +154,55 @@ class InventoryState extends State<InventoryWidget> {
       Card(
         child: Column(
           children: [
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Flexible(
-                    child: TypeAheadFormField(
-                      textFieldConfiguration: TextFieldConfiguration(
-                        controller: _barcodeController,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Code-barre',
-                          prefixIcon: IconButton(
-                            onPressed: () => _barcodeController.clear(),
-                            icon: Icon(Icons.cancel),
-                          ),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                      suggestionsCallback: (pattern) {
-                        List<String> suggestions = [];
-                        if (pattern.length > 1) {
-                          _productsByBarcode.keys.forEach((barcode) {
-                            if (barcode.contains(pattern)) {
-                              suggestions.add(barcode);
-                            }
-                          });
-                        }
-                        return suggestions;
-                      },
-                      itemBuilder: (context, suggestion) {
-                        return ListTile(
-                          dense: true,
-                          title: Text(suggestion),
-                        );
-                      },
-                      noItemsFoundBuilder: (context) {
-                        if (_productNameController.text.length > 1) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text(
-                              'Aucun code-barre trouvé',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  color: Theme.of(context).disabledColor,
-                                  fontSize: 18.0),
-                            ),
-                          );
-                        } else {
-                          return null;
-                        }
-                      },
-                      onSuggestionSelected: (suggestion) {
-                        _barcodeController.text = suggestion;
-                      },
-                    ),
+            TypeAheadFormField(
+              textFieldConfiguration: TextFieldConfiguration(
+                controller: _barcodeController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Code-barre',
+                  prefixIcon: IconButton(
+                    onPressed: () => _barcodeController.clear(),
+                    icon: Icon(Icons.cancel),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.camera),
-                    tooltip: "Scan",
-                    onPressed: scan,
-                  ),
-                ],
+                ),
+                keyboardType: TextInputType.number,
               ),
+              suggestionsCallback: (pattern) {
+                List<String> suggestions = [];
+                if (pattern.length > 1) {
+                  _productsByBarcode.keys.forEach((barcode) {
+                    if (barcode.contains(pattern)) {
+                      suggestions.add(barcode);
+                    }
+                  });
+                }
+                return suggestions;
+              },
+              itemBuilder: (context, suggestion) {
+                return ListTile(
+                  dense: true,
+                  title: Text(suggestion as String),
+                );
+              },
+              noItemsFoundBuilder: (context) {
+                if (_productNameController.text.length > 1) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'Aucun code-barre trouvé',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: Theme.of(context).disabledColor,
+                          fontSize: 18.0),
+                    ),
+                  );
+                } else {
+                  return Text('');
+                }
+              },
+              onSuggestionSelected: (suggestion) {
+                _barcodeController.text = suggestion as String;
+              },
             ),
             TypeAheadFormField(
               textFieldConfiguration: TextFieldConfiguration(
@@ -252,7 +239,7 @@ class InventoryState extends State<InventoryWidget> {
               itemBuilder: (context, suggestion) {
                 return ListTile(
                   dense: true,
-                  title: Text(suggestion),
+                  title: Text(suggestion as String),
                 );
               },
               noItemsFoundBuilder: (context) {
@@ -268,11 +255,11 @@ class InventoryState extends State<InventoryWidget> {
                     ),
                   );
                 } else {
-                  return null;
+                  return Text('');
                 }
               },
               onSuggestionSelected: (suggestion) {
-                _productNameController.text = suggestion;
+                _productNameController.text = suggestion as String;
               },
             ),
             IntrinsicHeight(
@@ -280,7 +267,8 @@ class InventoryState extends State<InventoryWidget> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Flexible(
+                  Expanded(
+                    flex: 6,
                     child: TextField(
                       controller: _qtyController,
                       decoration: InputDecoration(
@@ -292,19 +280,26 @@ class InventoryState extends State<InventoryWidget> {
                         ),
                       ),
                       onSubmitted: (String value) {
-                        this.recordCount();
+                        if (!_recordInProgress) this.recordCount();
                       },
                       focusNode: _qtyFocus,
                       keyboardType: TextInputType.number,
                     ),
                   ),
-                  ElevatedButton(
-                    child: Text('Enregistrer'),
-                    onPressed: _productNameController.text.isEmpty
-                        ? null
-                        : () => setState(() {
-                              this.recordCount();
-                            }),
+                  Expanded(
+                    flex: 4,
+                    child: SizedBox(
+                      width: 200,
+                      child: ElevatedButton(
+                        child: Text('Enregistrer'),
+                        onPressed: _productNameController.text.isEmpty ||
+                                _recordInProgress
+                            ? null
+                            : () => setState(() {
+                                  this.recordCount();
+                                }),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -324,7 +319,7 @@ class InventoryState extends State<InventoryWidget> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      Text(product.name),
+                      Text(product?.name ?? ''),
                       Text(count.qty),
                     ],
                   ),
@@ -341,6 +336,18 @@ class InventoryState extends State<InventoryWidget> {
       ),
       body: Column(
         children: columnChildren(),
+      ),
+      floatingActionButton: Container(
+        height: 100.0,
+        width: 100.0,
+        child: FittedBox(
+          child: FloatingActionButton(
+            tooltip: 'Scan',
+            onPressed: scan,
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            child: const Icon(Icons.camera),
+          ),
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ The other products are :
 
 ### Requirement
 You will need [flutter](https://flutter.dev/docs/get-started/install) then let `flutter doctor` help you.
+This app was build with flutter 2.8.1
 
 It could make your life better:
 - [android-studio](https://developer.android.com/studio) for Andoid

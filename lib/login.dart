@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'package:inventory_coop/inventories.dart';
 import 'package:inventory_coop/api/client.dart';
+import 'package:inventory_coop/inventories.dart';
 import 'package:inventory_coop/model/storage.dart';
 
 const String URL_SERVER = 'https://inventaires.lachouettecoop.fr';
@@ -46,7 +45,8 @@ class _LoginState extends State<LoginWidget> {
   }
 
   void _checkValidate() {
-    _showValidate = _url.isNotEmpty && _email.isNotEmpty && _password.isNotEmpty;
+    _showValidate =
+        _url.isNotEmpty && _email.isNotEmpty && _password.isNotEmpty;
   }
 
   @override
@@ -95,8 +95,7 @@ class _LoginState extends State<LoginWidget> {
             _checkValidate();
           });
         },
-        onEditingComplete: () =>
-          FocusScope.of(context).nextFocus(),
+        onEditingComplete: () => FocusScope.of(context).nextFocus(),
         textInputAction: TextInputAction.next,
       ),
       TextFormField(
@@ -109,8 +108,7 @@ class _LoginState extends State<LoginWidget> {
             _checkValidate();
           });
         },
-        onEditingComplete: () =>
-            FocusScope.of(context).nextFocus(),
+        onEditingComplete: () => FocusScope.of(context).nextFocus(),
         textInputAction: TextInputAction.next,
       ),
       TextFormField(
@@ -120,7 +118,7 @@ class _LoginState extends State<LoginWidget> {
           suffixIcon: IconButton(
             icon: Icon(
               _showPassword ? Icons.visibility_off : Icons.visibility,
-              color: Theme.of(context).primaryColorDark,
+              color: Theme.of(context).colorScheme.primary,
             ),
             onPressed: () {
               setState(() {
@@ -150,8 +148,8 @@ class _LoginState extends State<LoginWidget> {
           onPressed: !_showValidate
               ? null
               : () {
-            submit();
-          },
+                  submit();
+                },
         ),
       ),
     ];

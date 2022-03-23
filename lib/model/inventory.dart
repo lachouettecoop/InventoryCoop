@@ -1,4 +1,5 @@
 import 'dart:collection';
+
 import 'product.dart';
 
 class Inventory {
@@ -9,9 +10,9 @@ class Inventory {
   final String id;
   String date = '';
   int state = Inventory.INITIATED;
-  HashMap<String, Product> counts;
+  HashMap<String, Product> counts = HashMap();
 
-  Inventory({this.id, this.date, this.state});
+  Inventory({required this.id, required this.date, required this.state});
 
   bool isActive() {
     return state == ACTIVE;

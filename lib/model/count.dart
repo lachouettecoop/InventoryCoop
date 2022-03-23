@@ -6,7 +6,11 @@ class Count {
   final String product;
   final String qty;
 
-  Count({this.counter, this.zone, this.product, this.qty});
+  Count(
+      {required this.counter,
+      required this.zone,
+      required this.product,
+      required this.qty});
 
   factory Count.fromJson(Map<String, dynamic> json) {
     return Count(
