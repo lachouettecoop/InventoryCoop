@@ -3,7 +3,11 @@ class Product {
   final String name;
   final String barcode;
 
-  Product({required this.id, required this.name, required this.barcode});
+  Product({
+    required this.id,
+    required this.name,
+    required this.barcode,
+  });
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(

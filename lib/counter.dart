@@ -5,8 +5,10 @@ import 'package:inventory_coop/model/product.dart';
 import 'package:inventory_coop/model/storage.dart';
 
 class CounterWidget extends StatefulWidget {
+  const CounterWidget({super.key});
+
   @override
-  _CounterState createState() => _CounterState();
+  State<CounterWidget> createState() => _CounterState();
 }
 
 class _CounterState extends State<CounterWidget> {
@@ -59,7 +61,8 @@ class _CounterState extends State<CounterWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Compteur'),
+        title: Text('Compteur', style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: FutureBuilder<List<Product>>(
         future: _products,
@@ -67,7 +70,7 @@ class _CounterState extends State<CounterWidget> {
           Storage().products.clear();
           List<Widget> children = <Widget>[];
           if (snapshot.hasData) {
-            Storage().products.addAll(snapshot.data as List<Product>);
+            Storage().products.addAll(snapshot.data as Iterable<Product>);
             children = <Widget>[
               TextFormField(
                 initialValue: Storage().user.lastname,
@@ -94,35 +97,37 @@ class _CounterState extends State<CounterWidget> {
                 },
               ),
               Align(
-                  child: ElevatedButton(
-                child: Text('Valider'),
-                onPressed: !_showValidate
+                child: ElevatedButton(
+                  onPressed: !_showValidate
                     ? null
                     : () {
-                        _showValidate = false;
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          Storage().counter = _name;
-                          Storage().zone = _team;
-                          ApiClient().fetchCounts({
-                            'inventory': Storage().inventory.id,
-                            'counter': Storage().counter,
-                            'zone': Storage().zone,
-                          }).then((counts) {
-                            Storage().counts.clear();
-                            Storage().counts.addAll(counts);
+                    _showValidate = false;
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        Storage().counter = _name;
+                        Storage().zone = _team;
+                        ApiClient().fetchCounts({
+                          'inventory': Storage().inventory.id,
+                          'counter': Storage().counter,
+                          'zone': Storage().zone,
+                        }).then((counts) {
+                          Storage().counts.clear();
+                          Storage().counts.addAll(counts);
+                          if (context.mounted) {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                   builder: (context) => InventoryWidget()),
                             );
-                            _checkValidate();
-                          }).catchError((e) {
-                            _showAlert('Impossible de récuperer les comptes',
-                                "Recommencer l'opértion.\n\n${e.toString()}");
-                            _checkValidate();
-                          });
+                          }
+                          _checkValidate();
+                        }).catchError((e) {
+                          _showAlert('Impossible de récuperer les comptes',
+                              "Recommencer l'opértion.\n\n${e.toString()}");
+                          _checkValidate();
                         });
-                      },
+                      });
+                  },
+                  child: Text('Valider'),
               )),
             ];
           } else if (snapshot.hasError) {
@@ -140,9 +145,9 @@ class _CounterState extends State<CounterWidget> {
           } else {
             children = <Widget>[
               SizedBox(
-                child: CircularProgressIndicator(),
                 width: 60,
                 height: 60,
+                child: CircularProgressIndicator(),
               ),
               Padding(
                 padding: EdgeInsets.only(top: 16),

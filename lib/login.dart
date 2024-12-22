@@ -3,15 +3,17 @@ import 'package:inventory_coop/api/client.dart';
 import 'package:inventory_coop/inventories.dart';
 import 'package:inventory_coop/model/storage.dart';
 
-const String URL_SERVER = 'https://inventaires.lachouettecoop.fr';
+const String urlServer = 'https://inventaires.lachouettecoop.fr';
 
 class LoginWidget extends StatefulWidget {
+  const LoginWidget({super.key});
+
   @override
-  _LoginState createState() => _LoginState();
+  State<LoginWidget> createState() => _LoginState();
 }
 
 class _LoginState extends State<LoginWidget> {
-  String _url = URL_SERVER;
+  String _url = urlServer;
   String _email = '';
   String _password = '';
   bool _showPassword = false;
@@ -63,12 +65,14 @@ class _LoginState extends State<LoginWidget> {
       var user = ApiClient().login(_email, _password);
       user.then((value) {
         Storage().user = value;
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) {
-            return InventoriesWidget();
-          }),
-        );
+        if (context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) {
+              return InventoriesWidget();
+            }),
+          );
+        }
         _checkValidate();
       }).catchError((e) {
         _showAlert('Impossible de se connecter',
@@ -85,7 +89,7 @@ class _LoginState extends State<LoginWidget> {
         child: Image(image: AssetImage('assets/logo.png')),
       ),
       TextFormField(
-        initialValue: URL_SERVER,
+        initialValue: urlServer,
         decoration: InputDecoration(
           labelText: 'URL du serveur',
         ),
@@ -144,19 +148,20 @@ class _LoginState extends State<LoginWidget> {
       ),
       Align(
         child: ElevatedButton(
-          child: Text('Valider'),
           onPressed: !_showValidate
               ? null
               : () {
-                  submit();
-                },
+            submit();
+          },
+          child: Text('Valider'),
         ),
       ),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: Text('Login', style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: ListView(
         children: children,

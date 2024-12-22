@@ -14,7 +14,7 @@ class ApiClient {
     final response = await get('counts', {'where': json.encode(where)});
 
     if (response.statusCode == 200) {
-      List<Count> counts = <Count>[];
+      List<Count> counts = [];
       var body = jsonDecode(response.body);
       body['items'].forEach((count) {
         counts.add(Count.fromJson(count));
@@ -29,7 +29,7 @@ class ApiClient {
     final response = await get('products', {'where': json.encode(where)});
 
     if (response.statusCode == 200) {
-      List<Product> products = <Product>[];
+      List<Product> products = [];
       var body = jsonDecode(response.body);
       body['items'].forEach((product) {
         products.add(Product.fromJson(product));
@@ -44,7 +44,7 @@ class ApiClient {
     final response = await get('inventories', {});
 
     if (response.statusCode == 200) {
-      List<Inventory> inventories = <Inventory>[];
+      List<Inventory> inventories = [];
       var body = jsonDecode(response.body);
       body['items'].forEach((inventory) {
         inventories.add(Inventory.fromJson(inventory));
@@ -150,7 +150,7 @@ class ApiClient {
   static final ApiClient _instance = ApiClient._privateConstructor();
   static final _client = http.Client();
   static final _r = RetryOptions(maxAttempts: 4);
-  Uri _hostUri = Uri.parse('https://inventaires.lachouettecoop.fr');
+  Uri _hostUri = Uri();
   String _token = '';
 
   setHostUri(uri) {

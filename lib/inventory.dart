@@ -4,7 +4,6 @@ import 'dart:collection';
 import 'package:diacritic/diacritic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:intl/intl.dart';
 import 'package:inventory_coop/api/client.dart';
@@ -12,11 +11,20 @@ import 'package:inventory_coop/model/count.dart';
 import 'package:inventory_coop/model/product.dart';
 import 'package:inventory_coop/model/storage.dart';
 
-const NO_BARCODE = '-';
+import 'api/client.dart';
+import 'barcode_scanner.dart';
+import 'model/count.dart';
+import 'model/product.dart';
+import 'model/storage.dart';
+
+
+const noBareCode = '-';
 
 class InventoryWidget extends StatefulWidget {
+  const InventoryWidget({super.key});
+
   @override
-  InventoryState createState() => InventoryState();
+  State<InventoryWidget> createState() => InventoryState();
 }
 
 class InventoryState extends State<InventoryWidget> {
@@ -27,11 +35,11 @@ class InventoryState extends State<InventoryWidget> {
   final _qtyFocus = FocusNode();
   bool _recordInProgress = false;
 
-  List<Count> _countsDisplayed = [];
+  final List<Count> _countsDisplayed = [];
 
-  HashMap<String, Product> _productsByBarcode = HashMap<String, Product>();
-  HashMap<String, Product> _productsByName = HashMap<String, Product>();
-  HashMap<String, Product> _productsById = HashMap<String, Product>();
+  final HashMap<String, Product> _productsByBarcode = HashMap<String, Product>();
+  final HashMap<String, Product> _productsByName = HashMap<String, Product>();
+  final HashMap<String, Product> _productsById = HashMap<String, Product>();
 
   @override
   void initState() {
@@ -39,21 +47,21 @@ class InventoryState extends State<InventoryWidget> {
     _productsByBarcode.clear();
     _productsByName.clear();
     _productsById.clear();
-    Storage().products.forEach((product) {
+    for (var product in Storage().products) {
       if (product.barcode.isNotEmpty) {
         _productsByBarcode[product.barcode] = product;
       }
       _productsByName[product.name] = product;
       _productsById[product.id] = product;
-    });
+    }
 
     _countsDisplayed.clear();
-    Storage().counts.forEach((count) {
+    for (var count in Storage().counts) {
       _countsDisplayed.insert(0, count);
-    });
+    }
 
     _barcodeController.addListener(() {
-      if (_barcodeController.text == NO_BARCODE) {
+      if (_barcodeController.text == noBareCode) {
         return;
       }
       var product = _productsByBarcode[_barcodeController.text];
@@ -64,7 +72,6 @@ class InventoryState extends State<InventoryWidget> {
           Future.delayed(const Duration(milliseconds: 500), () {
             setState(() {
               SystemChannels.textInput.invokeMethod('TextInput.show');
-              print('_barcodeController');
             });
           });
         }
@@ -76,7 +83,7 @@ class InventoryState extends State<InventoryWidget> {
     _productNameController.addListener(() {
       var product = _productsByName[_productNameController.text];
       if (product != null) {
-        var barcode = NO_BARCODE;
+        var barcode = noBareCode;
         if (product.barcode.isNotEmpty) {
           barcode = product.barcode;
         }
@@ -86,7 +93,6 @@ class InventoryState extends State<InventoryWidget> {
           Future.delayed(const Duration(milliseconds: 500), () {
             setState(() {
               SystemChannels.textInput.invokeMethod('TextInput.show');
-              print('_productNameController');
             });
           });
         }
@@ -102,29 +108,23 @@ class InventoryState extends State<InventoryWidget> {
       var qty = double.parse(_qtyController.text);
       _qtyController.text = NumberFormat('####.##').format(qty);
       return true;
-    } on FormatException {}
+    } on FormatException {
+      // Nothing to do.
+    }
     return false;
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> scan() async {
-    String barcodeScanRes;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-          '#ff6666', 'Cancel', true, ScanMode.BARCODE);
-    } on PlatformException {
-      barcodeScanRes = 'Failed to get platform version.';
+  void _startBarcodeScanner() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const BarcodeScanner()),
+    );
+
+    if (result != null && result is String) {
+      setState(() {
+        _barcodeController.text = result;
+      });
     }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _barcodeController.text = barcodeScanRes != '-1' ? barcodeScanRes : '';
-    });
   }
 
   void recordCount() {
@@ -153,72 +153,55 @@ class InventoryState extends State<InventoryWidget> {
     return <Widget>[
       Card(
         child: Column(
+          spacing: 10,
           children: [
-            TypeAheadFormField(
-              textFieldConfiguration: TextFieldConfiguration(
-                controller: _barcodeController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Code-barre',
-                  prefixIcon: IconButton(
-                    onPressed: () => _barcodeController.clear(),
-                    icon: Icon(Icons.cancel),
-                  ),
-                ),
-                keyboardType: TextInputType.number,
-              ),
+            SizedBox(height: 5),
+            TypeAheadField<String>(
+              controller: _barcodeController,
               suggestionsCallback: (pattern) {
                 List<String> suggestions = [];
                 if (pattern.length > 1) {
-                  _productsByBarcode.keys.forEach((barcode) {
+                  for (var barcode in _productsByBarcode.keys) {
                     if (barcode.contains(pattern)) {
                       suggestions.add(barcode);
                     }
-                  });
+                  }
                 }
                 return suggestions;
+              },
+              builder: (context, controller, focusNode) {
+                return TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Code-barre',
+                      prefixIcon: IconButton(
+                        onPressed: () => controller.clear(),
+                        icon: Icon(Icons.cancel),
+                      ),
+                    )
+                );
               },
               itemBuilder: (context, suggestion) {
                 return ListTile(
                   dense: true,
-                  title: Text(suggestion as String),
+                  title: Text(suggestion),
                 );
               },
-              noItemsFoundBuilder: (context) {
-                if (_productNameController.text.length > 1) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      'Aucun code-barre trouvé',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: Theme.of(context).disabledColor,
-                          fontSize: 18.0),
-                    ),
-                  );
-                } else {
-                  return Text('');
-                }
-              },
-              onSuggestionSelected: (suggestion) {
-                _barcodeController.text = suggestion as String;
+              hideOnEmpty: true,
+              hideOnLoading: true,
+              onSelected: (suggestion) {
+                _barcodeController.text = suggestion;
               },
             ),
-            TypeAheadFormField(
-              textFieldConfiguration: TextFieldConfiguration(
-                  controller: _productNameController,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Nom du produit',
-                    prefixIcon: IconButton(
-                      onPressed: () => _productNameController.clear(),
-                      icon: Icon(Icons.cancel),
-                    ),
-                  )),
+            TypeAheadField<String>(
+              controller: _productNameController,
               suggestionsCallback: (pattern) {
                 List<String> suggestions = [];
                 if (pattern.length > 1) {
-                  _productsByName.keys.forEach((name) {
+                  for (var name in _productsByName.keys) {
                     var fuzzyName = removeDiacritics(name).toLowerCase();
                     var fuzzyPattern = removeDiacritics(pattern).toLowerCase();
                     var therms = fuzzyPattern.split(' ');
@@ -232,34 +215,35 @@ class InventoryState extends State<InventoryWidget> {
                     if (match) {
                       suggestions.add(name);
                     }
-                  });
+                  }
                 }
                 return suggestions;
               },
+              builder: (context, controller, focusNode) {
+                return TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Nom du produit',
+                      prefixIcon: IconButton(
+                        onPressed: () => controller.clear(),
+                        icon: Icon(Icons.cancel),
+                      ),
+                    )
+                );
+              },
+              hideOnEmpty: true,
+              hideOnLoading: true,
               itemBuilder: (context, suggestion) {
                 return ListTile(
                   dense: true,
                   title: Text(suggestion as String),
                 );
               },
-              noItemsFoundBuilder: (context) {
-                if (_productNameController.text.length > 1) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      'Aucun produit trouvé',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: Theme.of(context).disabledColor,
-                          fontSize: 18.0),
-                    ),
-                  );
-                } else {
-                  return Text('');
-                }
-              },
-              onSuggestionSelected: (suggestion) {
-                _productNameController.text = suggestion as String;
+              onSelected: (suggestion) {
+                _productNameController.text = suggestion;
               },
             ),
             IntrinsicHeight(
@@ -280,30 +264,22 @@ class InventoryState extends State<InventoryWidget> {
                         ),
                       ),
                       onSubmitted: (String value) {
-                        if (!_recordInProgress) this.recordCount();
+                        recordCount();
                       },
                       focusNode: _qtyFocus,
                       keyboardType: TextInputType.number,
                     ),
                   ),
-                  Expanded(
-                    flex: 4,
-                    child: SizedBox(
-                      width: 200,
-                      child: ElevatedButton(
-                        child: Text('Enregistrer'),
-                        onPressed: _productNameController.text.isEmpty ||
-                                _recordInProgress
-                            ? null
-                            : () => setState(() {
-                                  this.recordCount();
-                                }),
-                      ),
-                    ),
+                  ElevatedButton(
+                    onPressed: _productNameController.text.isEmpty
+                        ? null
+                        : () => setState(() { recordCount(); }),
+                    child: Text('Enregistrer'),
                   ),
                 ],
               ),
             ),
+            SizedBox(height: 5),
           ],
         ),
       ),
@@ -319,8 +295,8 @@ class InventoryState extends State<InventoryWidget> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      Text(product?.name ?? ''),
-                      Text(count.qty),
+                      Text("    ${product!.name}"),
+                      Text("${count.qty}    "),
                     ],
                   ),
                 );
@@ -332,23 +308,18 @@ class InventoryState extends State<InventoryWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Inventaire'),
+        title: Text('Inventaire', style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: Column(
         children: columnChildren(),
       ),
-      floatingActionButton: Container(
-        height: 100.0,
-        width: 100.0,
-        child: FittedBox(
-          child: FloatingActionButton(
-            tooltip: 'Scan',
-            onPressed: scan,
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-            child: const Icon(Icons.camera),
-          ),
-        ),
+      floatingActionButton: FloatingActionButton.large(
+        tooltip: "Scan",
+        onPressed: _startBarcodeScanner,
+        child: Icon(Icons.camera), // Icon for the button
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
