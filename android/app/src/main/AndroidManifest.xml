@@ -1,15 +1,8 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="fr.lachouettecoop.inventory_coop">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-<<<<<<< HEAD
-        android:name="${applicationName}"
-        android:label="InventoryCoop"
-        android:icon="@mipmap/launcher_icon">
-=======
         android:label="inventory_coop"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
->>>>>>> 8521272 (Upgrades)
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -20,13 +20,6 @@ android {
     }
 
     defaultConfig {
-<<<<<<< HEAD
-        applicationId "fr.lachouettecoop.inventorycoop"
-        minSdkVersion 18
-        targetSdkVersion 29
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
-=======
         applicationId = "fr.lachouettecoop.inventory_coop"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -34,7 +27,6 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
->>>>>>> 8521272 (Upgrades)
     }
 
     buildTypes {
