@@ -5,13 +5,15 @@ import 'package:inventory_coop/model/inventory.dart';
 import 'package:inventory_coop/model/storage.dart';
 
 class InventoriesWidget extends StatefulWidget {
+  const InventoriesWidget({super.key});
+
   @override
-  InventoriesState createState() => InventoriesState();
+  State<InventoriesWidget> createState() => InventoriesState();
 }
 
 class InventoriesState extends State<InventoriesWidget> {
   late Future<List<Inventory>> _inventories;
-  Inventory? _selectedInventory;
+  late Inventory _selectedInventory;
 
   @override
   void initState() {
@@ -23,7 +25,8 @@ class InventoriesState extends State<InventoriesWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Inventaires'),
+        title: Text('Inventaires', style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: FutureBuilder<List<Inventory>>(
         future: _inventories,
@@ -34,16 +37,14 @@ class InventoriesState extends State<InventoriesWidget> {
           if (snapshot.hasData) {
             snapshot.data?.forEach((inventory) {
               if (inventory.isActive()) {
-                if (_selectedInventory == null) {
-                  _selectedInventory = inventory;
-                }
+                _selectedInventory = inventory;
                 children.add(RadioListTile<Inventory>(
                   title: Text(inventory.date),
                   value: inventory,
                   groupValue: _selectedInventory,
-                  onChanged: (value) {
+                  onChanged: (Inventory? value) {
                     setState(() {
-                      _selectedInventory = value as Inventory;
+                      _selectedInventory = value!;
                     });
                   },
                 ));
@@ -75,9 +76,9 @@ class InventoriesState extends State<InventoriesWidget> {
           } else {
             children = <Widget>[
               SizedBox(
-                child: CircularProgressIndicator(),
                 width: 60,
                 height: 60,
+                child: CircularProgressIndicator(),
               ),
               const Padding(
                 padding: EdgeInsets.only(top: 16),
